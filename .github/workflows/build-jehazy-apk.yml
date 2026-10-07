@@ -1,0 +1,41 @@
+name: Build JEHAZY APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Extract JEHAZY hotfix
+        run: |
+          rm -rf jehazi-hotfix
+          unzip -q jehazi-flagship-v9.1.1-hotfix.zip
+          test -f jehazi-hotfix/package.json
+          test -f jehazi-hotfix/eas.json
+
+      - name: Install pnpm
+        run: npm install --global pnpm@9.12.0
+
+      - name: Install dependencies
+        working-directory: jehazi-hotfix
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Android APK on EAS
+        working-directory: jehazi-hotfix
+        run: npx eas-cli@24.11.0 build --platform android --profile preview --non-interactive --no-wait
